@@ -1,0 +1,16 @@
+*.mcw merge=verify
+*.mcp merge=verify
+*.map merge=verify
+*.hex merge=verify
+*.exe merge=verify
+*.dll merge=verify
+*.ASM text eol=crlf
+*.INC text eol=crlf
+*.c text eol=crlf
+*.h text eol=crlf
+*.C text eol=crlf
+*.H text eol=crlf
+*.s text eol=crlf
+*.S text eol=crlf
+*.SCM text eol=crlf
+*.scm text eol=crlf
