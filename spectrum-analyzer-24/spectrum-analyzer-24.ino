@@ -6,26 +6,29 @@
 
 #define SCAN_CS           10      // scanner Select
 
-//SPI0
-#define OLED_DC_SPI0      7
-#define OLED_CS_SPI0      9
-#define OLED_CLK_SPI0     5 // 13
-#define OLED_MOSI_SPI0    6 // 11
-#define OLED_RESET_SPI0   4
-
-//SPI1
-#define OLED_DC_SPI1      7
-#define OLED_CS_SPI1      8
-#define OLED_CLK_SPI1     5 // 13
-#define OLED_MOSI_SPI1    6 // 11
-#define OLED_RESET_SPI1   3
+////SPI0
+//#define OLED_DC_SPI0      7
+//#define OLED_CS_SPI0      9
+//#define OLED_CLK_SPI0     5 // 13
+//#define OLED_MOSI_SPI0    6 // 11
+//#define OLED_RESET_SPI0   4
+//
+////SPI1
+//#define OLED_DC_SPI1      7
+//#define OLED_CS_SPI1      8
+//#define OLED_CLK_SPI1     5 // 13
+//#define OLED_MOSI_SPI1    6 // 11
+//#define OLED_RESET_SPI1   3
 
 //I2C
-//#define OLED_RESET        2 // not used
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
-Adafruit_SSD1306 displaySPI0(OLED_MOSI_SPI0, OLED_CLK_SPI0, OLED_DC_SPI0, OLED_RESET_SPI0, OLED_CS_SPI0);
-Adafruit_SSD1306 displaySPI1(OLED_MOSI_SPI1, OLED_CLK_SPI1, OLED_DC_SPI1, OLED_RESET_SPI1, OLED_CS_SPI1);
-//Adafruit_SSD1306 displayI2C(OLED_RESET); //!
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+#define OLED_RESET     16 // Reset pin # (or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 displayI2C(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+
 
 #define RSSI_OFFSET      95  // offset for displayed data
 #define MAX_CHAN_QTY    255  // max number of channel for spacing 405.456543 kHz
@@ -51,10 +54,6 @@ static const unsigned char PROGMEM logo16_glcd_bmp[] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x15, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 };*/
 
-#if (SSD1306_LCDHEIGHT != 64)
-#error("Height incorrect, please fix Adafruit_SSD1306.h!");
-#endif
-
 byte cal[MAX_CHAN_QTY], rssi_data[MAX_DISP_LINE], data, RSSI_data;
 int RSSI_dbm, RSSI_max;
 
@@ -62,15 +61,15 @@ void setup() {
   Serial.begin(9600);
   
   pinMode(SCAN_CS, OUTPUT);
-  pinMode(OLED_CS_SPI0, OUTPUT);
-  pinMode(OLED_CS_SPI1, OUTPUT);
+//  pinMode(OLED_CS_SPI0, OUTPUT);
+//  pinMode(OLED_CS_SPI1, OUTPUT);
   
   SPI.begin();
   SPI.setClockDivider(SPI_CLOCK_DIV2);  // max possible SPI speed, 1/2 F_CLOCK
   
   digitalWrite(SCAN_CS, HIGH);
-  digitalWrite(OLED_CS_SPI0, HIGH);
-  digitalWrite(OLED_CS_SPI1, HIGH);
+//  digitalWrite(OLED_CS_SPI0, HIGH);
+//  digitalWrite(OLED_CS_SPI1, HIGH);
   
   init_CC2500();  // initialize CC2500 registers
   init_displays();
@@ -131,117 +130,60 @@ void loop() {
 }
 
 void DrawScreen() {
-  digitalWrite(OLED_CS_SPI0, LOW);
-  displaySPI0.clearDisplay();
+  displayI2C.clearDisplay();
   // grid
-  displaySPI0.drawLine(123, 56, 123, 63, WHITE);
-  displaySPI0.drawLine(111, 60, 111, 63, WHITE);
-  displaySPI0.drawLine( 99, 56,  99, 63, WHITE);
-  displaySPI0.drawLine( 86, 60,  86, 63, WHITE);
-  displaySPI0.drawLine( 74, 56,  74, 63, WHITE);
-  displaySPI0.drawLine( 62, 60,  62, 63, WHITE);
-  displaySPI0.drawLine( 49, 56,  49, 63, WHITE);
-  displaySPI0.drawLine( 37, 60,  37, 63, WHITE);
-  displaySPI0.drawLine( 25, 56,  25, 63, WHITE);
-  displaySPI0.drawLine( 12, 60,  12, 63, WHITE);
-  displaySPI0.drawLine(  0, 56,   0, 63, WHITE);
-  displaySPI0.display();
+  displayI2C.drawLine(123, 56, 123, 63, WHITE);
+  displayI2C.drawLine(111, 60, 111, 63, WHITE);
+  displayI2C.drawLine( 99, 56,  99, 63, WHITE);
+  displayI2C.drawLine( 86, 60,  86, 63, WHITE);
+  displayI2C.drawLine( 74, 56,  74, 63, WHITE);
+  displayI2C.drawLine( 62, 60,  62, 63, WHITE);
+  displayI2C.drawLine( 49, 56,  49, 63, WHITE);
+  displayI2C.drawLine( 37, 60,  37, 63, WHITE);
+  displayI2C.drawLine( 25, 56,  25, 63, WHITE);
+  displayI2C.drawLine( 12, 60,  12, 63, WHITE);
+  displayI2C.drawLine(  0, 56,   0, 63, WHITE);
+  displayI2C.display();
 
   // horizontal numbers
-  displaySPI0.setTextSize(1);
-  displaySPI0.setTextColor(WHITE);
-  displaySPI0.setRotation(2);
-  displaySPI0.setCursor(26, 10);  displaySPI0.write(49); // 1
-  displaySPI0.setCursor(51, 10);  displaySPI0.write(50); // 2
-  displaySPI0.setCursor(76, 10);  displaySPI0.write(51); // 3
-  displaySPI0.setCursor(99, 10);  displaySPI0.write(52); // 4
-  //displaySPI0.setCursor(123, 10);  displaySPI0.write(53); // 5
-  displaySPI0.display();
+  displayI2C.setTextSize(1);
+  displayI2C.setTextColor(WHITE);
+  displayI2C.setRotation(2);
+  displayI2C.setCursor(26, 10);  displayI2C.write(49); // 1
+  displayI2C.setCursor(51, 10);  displayI2C.write(50); // 2
+  displayI2C.setCursor(76, 10);  displayI2C.write(51); // 3
+  displayI2C.setCursor(99, 10);  displayI2C.write(52); // 4
+  //displayI2C.setCursor(123, 10);  displayI2C.write(53); // 5
+  displayI2C.display();
 
   // vertical numbers
-  displaySPI0.setTextSize(1);
-  displaySPI0.setTextColor(WHITE);
-  displaySPI0.setRotation(2);
-  displaySPI0.setCursor(110, 11);  displaySPI0.write(45); // -
-  displaySPI0.setCursor(116, 11);  displaySPI0.write(52); // 4
-  displaySPI0.setCursor(122, 11);  displaySPI0.write(50); // 2
-  displaySPI0.setCursor(110, 21);  displaySPI0.write(45); // -
-  displaySPI0.setCursor(116, 21);  displaySPI0.write(53); // 5
-  displaySPI0.setCursor(122, 21);  displaySPI0.write(50); // 2
-  displaySPI0.setCursor(110, 31);  displaySPI0.write(45); // -
-  displaySPI0.setCursor(116, 31);  displaySPI0.write(54); // 6
-  displaySPI0.setCursor(122, 31);  displaySPI0.write(50); // 2
-  displaySPI0.setCursor(110, 41);  displaySPI0.write(45); // -
-  displaySPI0.setCursor(116, 41);  displaySPI0.write(55); // 7
-  displaySPI0.setCursor(122, 41);  displaySPI0.write(50); // 2
-  displaySPI0.setCursor(110, 51);  displaySPI0.write(45); // -
-  displaySPI0.setCursor(116, 51);  displaySPI0.write(56); // 8
-  displaySPI0.setCursor(122, 51);  displaySPI0.write(50); // 2
-  displaySPI0.display();
+  displayI2C.setTextSize(1);
+  displayI2C.setTextColor(WHITE);
+  displayI2C.setRotation(2);
+  displayI2C.setCursor(110, 11);  displayI2C.write(45); // -
+  displayI2C.setCursor(116, 11);  displayI2C.write(52); // 4
+  displayI2C.setCursor(122, 11);  displayI2C.write(50); // 2
+  displayI2C.setCursor(110, 21);  displayI2C.write(45); // -
+  displayI2C.setCursor(116, 21);  displayI2C.write(53); // 5
+  displayI2C.setCursor(122, 21);  displayI2C.write(50); // 2
+  displayI2C.setCursor(110, 31);  displayI2C.write(45); // -
+  displayI2C.setCursor(116, 31);  displayI2C.write(54); // 6
+  displayI2C.setCursor(122, 31);  displayI2C.write(50); // 2
+  displayI2C.setCursor(110, 41);  displayI2C.write(45); // -
+  displayI2C.setCursor(116, 41);  displayI2C.write(55); // 7
+  displayI2C.setCursor(122, 41);  displayI2C.write(50); // 2
+  displayI2C.setCursor(110, 51);  displayI2C.write(45); // -
+  displayI2C.setCursor(116, 51);  displayI2C.write(56); // 8
+  displayI2C.setCursor(122, 51);  displayI2C.write(50); // 2
+  displayI2C.display();
 
-  displaySPI0.setRotation(0);
+  displayI2C.setRotation(0);
   for (int x = 0; x <= 127; x++) {
     if (rssi_data[x] >= 63) rssi_data[x] = 221 - rssi_data[x];
-    displaySPI0.drawLine(127 - x, 0, 127 - x, rssi_data[x] - 1, WHITE);
+    displayI2C.drawLine(127 - x, 0, 127 - x, rssi_data[x] - 1, WHITE);
   }
-  displaySPI0.display();
-  digitalWrite(OLED_CS_SPI0, HIGH);
-  
-  digitalWrite(OLED_CS_SPI1, LOW);
-  displaySPI1.clearDisplay();
+  displayI2C.display();
 
-  // grid
-  displaySPI1.drawLine(120, 60, 120, 63, WHITE);
-  displaySPI1.drawLine(107, 56, 107, 63, WHITE);
-  displaySPI1.drawLine( 95, 60,  95, 63, WHITE);
-  displaySPI1.drawLine( 83, 56,  83, 63, WHITE);
-  displaySPI1.drawLine( 70, 60,  70, 63, WHITE);
-  displaySPI1.drawLine( 58, 56,  58, 63, WHITE);
-  displaySPI1.drawLine( 46, 60,  46, 63, WHITE);
-  displaySPI1.drawLine( 33, 56,  33, 63, WHITE);
-  displaySPI1.drawLine( 21, 60,  21, 63, WHITE);
-  displaySPI1.drawLine(  9, 56,   9, 63, WHITE);
-  displaySPI1.display();
-
-  // horizontal numbers
-  displaySPI1.setTextSize(1);
-  displaySPI1.setTextColor(WHITE);
-  displaySPI1.setRotation(2);
-  displaySPI1.setCursor(17, 10);  displaySPI1.write(54); // 6
-  displaySPI1.setCursor(42, 10);  displaySPI1.write(55); // 7
-  displaySPI1.setCursor(67, 10);  displaySPI1.write(56); // 8
-  displaySPI1.setCursor(92, 10);  displaySPI1.write(57); // 9
-  //displaySPI1.setCursor(116, 10);  displaySPI1.write(48); // 0
-  displaySPI1.display();
-  
-  // vertical numbers
-  displaySPI1.setTextSize(1);
-  displaySPI1.setTextColor(WHITE);
-  displaySPI1.setRotation(2);
-  displaySPI1.setCursor(110, 11);  displaySPI1.write(45); // -
-  displaySPI1.setCursor(116, 11);  displaySPI1.write(52); // 4
-  displaySPI1.setCursor(122, 11);  displaySPI1.write(50); // 2
-  displaySPI1.setCursor(110, 21);  displaySPI1.write(45); // -
-  displaySPI1.setCursor(116, 21);  displaySPI1.write(53); // 5
-  displaySPI1.setCursor(122, 21);  displaySPI1.write(50); // 2
-  displaySPI1.setCursor(110, 31);  displaySPI1.write(45); // -
-  displaySPI1.setCursor(116, 31);  displaySPI1.write(54); // 6
-  displaySPI1.setCursor(122, 31);  displaySPI1.write(50); // 2
-  displaySPI1.setCursor(110, 41);  displaySPI1.write(45); // -
-  displaySPI1.setCursor(116, 41);  displaySPI1.write(55); // 7
-  displaySPI1.setCursor(122, 41);  displaySPI1.write(50); // 2
-  displaySPI1.setCursor(110, 51);  displaySPI1.write(45); // -
-  displaySPI1.setCursor(116, 51);  displaySPI1.write(56); // 8
-  displaySPI1.setCursor(122, 51);  displaySPI1.write(50); // 2
-  displaySPI1.display();
-  
-  displaySPI1.setRotation(0);
-  for (int x = 128; x <= 255; x++) {
-    if (rssi_data[x] >= 63) rssi_data[x] = 221 - rssi_data[x];
-    displaySPI1.drawLine(255 - x, 0, 255 - x, rssi_data[x] - 1, WHITE);
-  }
-  displaySPI1.display();
-  digitalWrite(OLED_CS_SPI1, HIGH);
 }
 
 void init_CC2500() {
@@ -287,21 +229,21 @@ char CC2500_Read(char CC2500_addr) {
 }
 
 void init_displays() {
-  // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
-  digitalWrite(OLED_CS_SPI0, LOW);
-  displaySPI0.begin(SSD1306_SWITCHCAPVCC);
-  //displaySPI0.display();
-  digitalWrite(OLED_CS_SPI0, HIGH);
+//  // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
+//  digitalWrite(OLED_CS_SPI0, LOW);
+//  displayI2C.begin(SSD1306_SWITCHCAPVCC);
+//  //displayI2C.display();
+//  digitalWrite(OLED_CS_SPI0, HIGH);
+//  
+//  digitalWrite(OLED_CS_SPI1, LOW);
+//  displaySPI1.begin(SSD1306_SWITCHCAPVCC);
+//  //displaySPI1.display();
+//  digitalWrite(OLED_CS_SPI1, HIGH);
   
-  digitalWrite(OLED_CS_SPI1, LOW);
-  displaySPI1.begin(SSD1306_SWITCHCAPVCC);
-  //displaySPI1.display();
-  digitalWrite(OLED_CS_SPI1, HIGH);
-  /*
   displayI2C.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
   // miniature bitmap display
   displayI2C.clearDisplay();
-  displayI2C.drawBitmap(32, 16, logo16_glcd_bmp, 64, 32, WHITE);
-  displayI2C.display();*/
+//  displayI2C.drawBitmap(32, 16, logo16_glcd_bmp, 64, 32, WHITE);
+  displayI2C.display();
   // init done
 }

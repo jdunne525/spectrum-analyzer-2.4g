@@ -52,6 +52,7 @@
     
 */
 
+//OLED setup for "Heltec Wifi Kit 32"
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);
 
 // Please UNCOMMENT one of the contructor lines below

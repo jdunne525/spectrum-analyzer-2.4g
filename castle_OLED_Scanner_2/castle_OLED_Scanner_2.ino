@@ -8,10 +8,11 @@ As test input I'm using a TV sender which can be switched between 4 channels.
 */
 
 #include <SPI.h>
-#include "U8glib.h"
+#include "U8g2lib.h"
 #include "cc2500_REG.h"
 
-U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NONE);  // I2C / TWI 
+//OLED setup for "Heltec Wifi Kit 32"
+U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);
 
 //U8GLIB_SH1106_128X64 u8g(U8G_I2C_OPT_NONE);	// I2C / TWI 
 //U8GLIB_SH1106_128X64 u8g(U8G_I2C_OPT_DEV_0|U8G_I2C_OPT_FAST);	// Dev 0, Fast I2C / TWI
@@ -41,8 +42,8 @@ void draw(void)
 {
   for(byte x = 0; x < 128; x++)
   {
-//    u8g.drawVLine(x,0,data[x]);
-    u8g.drawVLine(x,64-data[x],64);
+//    u8g2.drawVLine(x,0,data[x]);
+    u8g2.drawVLine(x,64-data[x],64);
   }
 }
 
@@ -66,9 +67,9 @@ void setup(void)
 //  attachInterrupt(0, myISR, RISING); // INT 1 is D3, INT 0 is D2
   attachInterrupt(0, myISR, FALLING); // INT 1 is D3, INT 0 is D2
 
-//  u8g.setRot180();
-//  u8g.setColorIndex(1);         // pixel on
-//  u8g.setScale2x2();
+//  u8g2.setRot180();
+//  u8g2.setColorIndex(1);         // pixel on
+//  u8g2.setScale2x2();
 
   init_CC2500();
 
@@ -87,6 +88,8 @@ void setup(void)
   delayMicroseconds(800);               // settling time, refer to datasheet
   WriteReg(SRX, 0x3D);			// enable rx
 
+  u8g2.begin();
+  u8g2.clearBuffer();
   displayMode();
 }
 
@@ -161,11 +164,11 @@ void loop(void)
   }
   else
   {
-    u8g.firstPage();  
+    u8g2.firstPage();  
     do
     {
       draw();
-    } while( u8g.nextPage() );
+    } while( u8g2.nextPage() );
   }
 //  delay(150);
 }
@@ -173,42 +176,42 @@ void loop(void)
 void displayMode()
 {
   cont = millis() + 2500;
-  u8g.firstPage();
+  u8g2.firstPage();
   do
   {
-    u8g.setFont(u8g_font_6x10);
-    u8g.setFontRefHeightExtendedText();
-    u8g.setDefaultForegroundColor();
-    u8g.setFontPosTop();
-    u8g.setScale2x2();
+    u8g2.setFont(u8g_font_6x10);
+    u8g2.setFontRefHeightExtendedText();
+    u8g2.setDrawColor(1);   //White
+    u8g2.setFontPosTop();
+    //u8g2.setScale2x2();   //doesn't exist in u8g2
 
     switch(mode)
     {
       case 0:
-      u8g.drawStr(22, 10, "Full");
-      u8g.undoScale();
-      u8g.drawStr(48, 44, "0..255");
+      u8g2.drawStr(22, 10, "Full");
+      //u8g2.undoScale();
+      u8g2.drawStr(48, 44, "0..255");
       break;
       
       case 1:
-      u8g.drawStr(16, 10, "Bottom");
-      u8g.undoScale();
-      u8g.drawStr(50, 44, "0..127");
+      u8g2.drawStr(16, 10, "Bottom");
+      //u8g2.undoScale();
+      u8g2.drawStr(50, 44, "0..127");
       break;
       
       case 2:
-      u8g.drawStr(16, 10, "Middle");
-      u8g.undoScale();
-      u8g.drawStr(48, 44, "64..191");
+      u8g2.drawStr(16, 10, "Middle");
+      //u8g2.undoScale();
+      u8g2.drawStr(48, 44, "64..191");
       break;
       
       case 3:
-      u8g.drawStr(24, 10, "Top");
-      u8g.undoScale();
-      u8g.drawStr(42, 44, "128..255");
+      u8g2.drawStr(24, 10, "Top");
+      //u8g2.undoScale();
+      u8g2.drawStr(42, 44, "128..255");
       break;
     }
-  } while( u8g.nextPage() );
+  } while( u8g2.nextPage() );
 
   while (millis() < cont);
 }
