@@ -25,7 +25,15 @@ U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, 
 #define RSSI_OVERSAMPLE 50 // number of measures for each channel to found a max RSSI value
 #define MAX_CHAN_QTY  256  // max number of channel for spacing 405.456543MHz
 //#define MAX_DISP_LINE 84//159  // max horizontal display resolution
-#define MAX_SAMPLING 20 // was 500    // qty of samples in each iteration (1...100)
+
+//original sampling:
+//#define MAX_SAMPLING 20 // was 500    // qty of samples in each iteration (1...100)
+#define MAX_SAMPLING 5 // was 500    // qty of samples in each iteration (1...100)
+
+#define mode_full   0
+#define mode_bottom 1
+#define mode_middle 2
+#define mode_top    3
 
 byte mode = 0;
 byte inter = 0;
@@ -96,10 +104,36 @@ void setup(void)
 
 void loop(void)
 {
+  int StartChan = 0;
+  int EndChan = 255;
+  
   //Clear all channel data:
   for (int i = 0; i < MAX_CHAN_QTY; i++) data[i] = 0;
 
-  for (int i = 0; i < MAX_CHAN_QTY && !inter; i++)
+    switch(mode)
+    {
+      case mode_full:
+        StartChan = 0;
+        EndChan = 255;
+        break;
+      case mode_bottom: 
+        StartChan = 0;
+        EndChan = 127;
+        break;
+      case mode_middle:
+        StartChan = 64;
+        EndChan = 191;
+        break;      
+      case mode_top:
+        StartChan = 128;
+        EndChan = 255;
+        break;
+    }
+
+
+
+
+  for (int i = StartChan; i <= EndChan && !inter; i++)
   {
     WriteReg(CHANNR, i);		// set channel
     WriteReg(FSCAL1, cal[i]);		// restore calibration value for this channel
@@ -132,7 +166,7 @@ void loop(void)
     
     switch(mode)
     {
-      case 0:   //full
+      case mode_full:   //full
       {
         int p = i / 2;
         if (RSSI_max > data[p])
@@ -140,15 +174,15 @@ void loop(void)
       }
       break;
       
-      case 1:
+      case mode_bottom:
         if(i < 128) data[i] = RSSI_max;
       break;
       
-      case 2:
+      case mode_middle:
         if(i >= 64 && i < 192) data[i - 64] = RSSI_max;
       break;
       
-      case 3:
+      case mode_top:
         if(i >= 128) data[i - 128] = RSSI_max;
       break;
     }
@@ -158,10 +192,10 @@ void loop(void)
   {
     while(inter)
     {
-    inter = 0;
-    mode++;
-    mode &= 3;    
-    displayMode();
+      inter = 0;
+      mode++;
+      mode &= 3;    
+      displayMode();
     }
   }
   else
@@ -189,25 +223,25 @@ void displayMode()
 
     switch(mode)
     {
-      case 0:
+      case mode_full:
       u8g2.drawStr(22, 10, "Full");
       //u8g2.undoScale();
       u8g2.drawStr(48, 44, "0..255");
       break;
       
-      case 1:
+      case mode_bottom:
       u8g2.drawStr(16, 10, "Bottom");
       //u8g2.undoScale();
       u8g2.drawStr(50, 44, "0..127");
       break;
       
-      case 2:
+      case mode_middle:
       u8g2.drawStr(16, 10, "Middle");
       //u8g2.undoScale();
       u8g2.drawStr(48, 44, "64..191");
       break;
       
-      case 3:
+      case mode_top:
       u8g2.drawStr(24, 10, "Top");
       //u8g2.undoScale();
       u8g2.drawStr(42, 44, "128..255");
