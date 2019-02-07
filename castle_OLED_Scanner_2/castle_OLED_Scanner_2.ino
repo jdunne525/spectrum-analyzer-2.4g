@@ -28,14 +28,16 @@ U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, 
 
 //original sampling:
 //#define MAX_SAMPLING 20 // was 500    // qty of samples in each iteration (1...100)
-#define MAX_SAMPLING 5 // was 500    // qty of samples in each iteration (1...100)
+#define MAX_SAMPLING 20 // was 500    // qty of samples in each iteration (1...100)
 
 #define mode_full   0
 #define mode_bottom 1
 #define mode_middle 2
 #define mode_top    3
+#define mode_spike  4
+#define mode_last   mode_spike
 
-byte mode = 0;
+byte DisplayMode = 0;
 byte inter = 0;
 byte dataB;
 byte cal[MAX_CHAN_QTY];
@@ -43,6 +45,7 @@ byte cal[MAX_CHAN_QTY];
 byte RSSI_data;
 int RSSI_dbm;
 int RSSI_max;
+int MaxPeak;
 long cont;
 
 byte data[128];
@@ -53,6 +56,13 @@ void draw(void)
 //    u8g2.drawVLine(x,0,data[x]);
     u8g2.drawVLine(x,64-data[x],64);
   }
+
+  if (DisplayMode == mode_spike) {
+    u8g2.setFont(u8g2_font_ncenB08_tr);
+    u8g2.setCursor(80, 32);
+    u8g2.print(MaxPeak);
+  }
+  
 }
 
 void myISR()
@@ -99,7 +109,7 @@ void setup(void)
 
   u8g2.begin();
   u8g2.clearBuffer();
-  displayMode();
+  displayModeScreen();
 }
 
 void loop(void)
@@ -109,29 +119,31 @@ void loop(void)
   
   //Clear all channel data:
   for (int i = 0; i < MAX_CHAN_QTY; i++) data[i] = 0;
+  MaxPeak = 0;
 
-    switch(mode)
-    {
-      case mode_full:
-        StartChan = 0;
-        EndChan = 255;
-        break;
-      case mode_bottom: 
-        StartChan = 0;
-        EndChan = 127;
-        break;
-      case mode_middle:
-        StartChan = 64;
-        EndChan = 191;
-        break;      
-      case mode_top:
-        StartChan = 128;
-        EndChan = 255;
-        break;
-    }
-
-
-
+  switch(DisplayMode)
+  {
+    case mode_full:
+      StartChan = 0;
+      EndChan = 255;
+      break;
+    case mode_bottom: 
+      StartChan = 0;
+      EndChan = 127;
+      break;
+    case mode_middle:
+      StartChan = 64;
+      EndChan = 191;
+      break;      
+    case mode_top:
+      StartChan = 128;
+      EndChan = 255;
+      break;
+    case mode_spike:
+      StartChan = 112;
+      EndChan = 128;
+      break;
+  }
 
   for (int i = StartChan; i <= EndChan && !inter; i++)
   {
@@ -163,8 +175,10 @@ void loop(void)
     RSSI_max += RSSI_OFFSET;
     if(RSSI_max < 0) RSSI_max = 0;
     if(RSSI_max > 110) RSSI_max = 110;
+
+    if (RSSI_max > MaxPeak) MaxPeak = RSSI_max;
     
-    switch(mode)
+    switch(DisplayMode)
     {
       case mode_full:   //full
       {
@@ -184,7 +198,13 @@ void loop(void)
       
       case mode_top:
         if(i >= 128) data[i - 128] = RSSI_max;
-      break;
+        break;
+      case mode_spike:
+        if(i >= StartChan) {
+            if (RSSI_max < 1) RSSI_max = 1;    //minimum value.. to put a floor and show how much bandwidth is actually sampled..
+            data[i - StartChan] = RSSI_max;
+        }
+        break;
     }
   }
 
@@ -193,9 +213,9 @@ void loop(void)
     while(inter)
     {
       inter = 0;
-      mode++;
-      mode &= 3;    
-      displayMode();
+      DisplayMode++;
+      if (DisplayMode > mode_last) DisplayMode = 0;
+      displayModeScreen();
     }
   }
   else
@@ -209,7 +229,7 @@ void loop(void)
 //  delay(150);
 }
 
-void displayMode()
+void displayModeScreen()
 {
   cont = millis() + 2500;
   u8g2.firstPage();
@@ -221,31 +241,33 @@ void displayMode()
     u8g2.setFontPosTop();
     //u8g2.setScale2x2();   //doesn't exist in u8g2
 
-    switch(mode)
+    switch(DisplayMode)
     {
       case mode_full:
-      u8g2.drawStr(22, 10, "Full");
-      //u8g2.undoScale();
-      u8g2.drawStr(48, 44, "0..255");
-      break;
-      
+        u8g2.drawStr(22, 10, "Full");
+        //u8g2.undoScale();
+        u8g2.drawStr(48, 44, "0..255");
+        break;
       case mode_bottom:
-      u8g2.drawStr(16, 10, "Bottom");
-      //u8g2.undoScale();
-      u8g2.drawStr(50, 44, "0..127");
-      break;
-      
+        u8g2.drawStr(16, 10, "Bottom");
+        //u8g2.undoScale();
+        u8g2.drawStr(50, 44, "0..127");
+        break;
       case mode_middle:
-      u8g2.drawStr(16, 10, "Middle");
-      //u8g2.undoScale();
-      u8g2.drawStr(48, 44, "64..191");
-      break;
-      
+        u8g2.drawStr(16, 10, "Middle");
+        //u8g2.undoScale();
+        u8g2.drawStr(48, 44, "64..191");
+        break;
       case mode_top:
-      u8g2.drawStr(24, 10, "Top");
-      //u8g2.undoScale();
-      u8g2.drawStr(42, 44, "128..255");
-      break;
+        u8g2.drawStr(24, 10, "Top");
+        //u8g2.undoScale();
+        u8g2.drawStr(42, 44, "128..255");
+        break;
+      case mode_spike:
+        u8g2.drawStr(24, 10, "Spike");
+        //u8g2.undoScale();
+        u8g2.drawStr(42, 44, "112..128");
+        break;
     }
   } while( u8g2.nextPage() );
 
