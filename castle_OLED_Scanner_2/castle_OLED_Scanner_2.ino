@@ -19,7 +19,7 @@ U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, 
 //U8GLIB_SH1106_128X64 u8g(U8G_I2C_OPT_NO_ACK);	// Display which does not send ACK
 
 #define BUT 2
-#define SCAN_CS    10     // scanner Select
+#define SCAN_CS    5     // scanner Select
 #define RSSI_TRESHOLD 100  // treshold of RSSI alarm level
 #define RSSI_OFFSET   88 //88 // was 75//95   // offset for displayed data
 #define RSSI_OVERSAMPLE 50 // number of measures for each channel to found a max RSSI value
@@ -62,7 +62,7 @@ void setup(void)
   pinMode(BUT, INPUT_PULLUP);
 
   SPI.begin();
-  SPI.setClockDivider(SPI_CLOCK_DIV2);  // max SPI speed, 1/2 F_CLOCK
+  //SPI.setClockDivider(SPI_CLOCK_DIV2);  // max SPI speed, 1/2 F_CLOCK
 
 //  attachInterrupt(0, myISR, RISING); // INT 1 is D3, INT 0 is D2
   attachInterrupt(0, myISR, FALLING); // INT 1 is D3, INT 0 is D2
@@ -73,6 +73,7 @@ void setup(void)
 
   init_CC2500();
 
+  //Scan all channels to calibrate:
   for (int i = 0; i < MAX_CHAN_QTY; i++)
   {
     WriteReg(CHANNR, i);		// set channel
@@ -95,6 +96,7 @@ void setup(void)
 
 void loop(void)
 {
+  //Clear all channel data:
   for (int i = 0; i < MAX_CHAN_QTY; i++) data[i] = 0;
 
   for (int i = 0; i < MAX_CHAN_QTY && !inter; i++)
@@ -130,7 +132,7 @@ void loop(void)
     
     switch(mode)
     {
-      case 0:
+      case 0:   //full
       {
         int p = i / 2;
         if (RSSI_max > data[p])
