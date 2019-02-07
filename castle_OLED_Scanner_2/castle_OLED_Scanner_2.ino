@@ -48,9 +48,17 @@ int RSSI_max;
 int MaxPeak;
 long cont;
 
+double AvgMaxPeak = 0;
+
 byte data[128];
+
+#define NUM_PEAKS   32
+int peaks[NUM_PEAKS];
+int peakindex = 0;
+
 void draw(void)
 {
+  int HighestPeak;
   for(byte x = 0; x < 128; x++)
   {
 //    u8g2.drawVLine(x,0,data[x]);
@@ -58,9 +66,25 @@ void draw(void)
   }
 
   if (DisplayMode == mode_spike) {
+
+    //Average the peak values;
+    //AvgMaxPeak = (MaxPeak - AvgMaxPeak)/128 + AvgMaxPeak;
+
+    //Store each peak value in a circular buffer of recent peak values:
+    peaks[peakindex] = MaxPeak;
+    peakindex++;
+    if (peakindex > NUM_PEAKS) peakindex = 0;
+
+    //sort through the circular buffer and find the highest peak value observed recently:
+    HighestPeak = 0;
+    for (int i = 0; i < NUM_PEAKS; i++) {
+      if (peaks[i] > HighestPeak) HighestPeak = peaks[i];
+    }
+
+    //Display the highest peak observed recently:
     u8g2.setFont(u8g2_font_ncenB08_tr);
     u8g2.setCursor(80, 32);
-    u8g2.print(MaxPeak);
+    u8g2.print(HighestPeak);
   }
   
 }
