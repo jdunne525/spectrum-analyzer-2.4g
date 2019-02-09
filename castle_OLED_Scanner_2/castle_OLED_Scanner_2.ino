@@ -62,7 +62,7 @@ double AvgMaxPeak = 0;
 
 byte data[128];
 
-#define NUM_PEAKS   32
+#define NUM_PEAKS   16      //With a scan range of 128 channels, it takes about 5 seconds to do 16 scans.  This represents the max peak observed during that time.
 int peaks[NUM_PEAKS];
 int peakindex = 0;
 
@@ -107,8 +107,13 @@ void draw(void)
 
     //Display the highest peak observed recently:
     u8g2.setFont(u8g2_font_ncenB08_tr);
-    u8g2.setCursor(100, 32);
+    u8g2.setCursor(100, 12);
     u8g2.print(HighestPeak);
+
+    //print the index so I can keep track of how long an interval the peak represents:
+//    u8g2.setCursor(100, 42);
+//    u8g2.print(peakindex);
+    
   }
 }
 
