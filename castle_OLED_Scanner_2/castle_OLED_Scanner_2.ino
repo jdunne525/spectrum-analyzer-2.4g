@@ -5,6 +5,23 @@ currently has 4 modes of operation showing the Full spectrum (256 samples)
 or the Bottom, Middle or Top 128 samples limited by the small screen.
 
 As test input I'm using a TV sender which can be switched between 4 channels.
+
+2/9/2019 Jdunne - Note from Simon Castle (original author) Via email:  
+I don't really mind what you do with it its just that some credit should possibly go to others but I don't know who that should be any more.
+In the end there are no secrets here and its all from the net in any case :-)
+
+Jdunne notes:
+Starting from Simon Castle's code I did several things for my purposes.
+(I was trying to identify the source of a wifi disturbance in my house every 5 seconds
+which turned out to be some kind of frequency scan coming from the router itself.)
+
+* Switched to an esp32 with built in oled display (Hiletgo wifi kit)
+* Updated from u8g lib to u8g2
+* Added "spike" mode to zoom into a certain range (code configured range)
+* Spike mode also shows the max rssi over a 5 second interval. (for locating the Signal source)
+* Minor refactoring during development
+* Added horizontal axis tick marks to aid in identifying frequencies 
+
 */
 
 #include <SPI.h>
