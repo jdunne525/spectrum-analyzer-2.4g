@@ -37,6 +37,16 @@ U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, 
 #define mode_spike  4
 #define mode_last   mode_spike
 
+//range of channels to display for spike mode  (separate from scan range below):
+int SpikeDisplayStart = 100;    //112;
+int SpikeDisplayEnd = 163;      //128;
+
+//range of channels to scan for spike mode:  (setting this different from display effects the samping rate which may be useful in some cases)
+//reduce this as much as possible for the fastest sampling rate.  display will only show a subset of the scan range.
+int SpikeScanStart = 100;
+int SpikeScanEnd = 227;
+
+
 byte DisplayMode = 0;
 byte inter = 0;
 byte dataB;
@@ -59,12 +69,26 @@ int peakindex = 0;
 void draw(void)
 {
   int HighestPeak;
+  int Height;
   for(byte x = 0; x < 128; x++)
   {
 //    u8g2.drawVLine(x,0,data[x]);
-    u8g2.drawVLine(x,64-data[x],64);
+    Height = data[x];
+    if (Height > 60) Height = 60;
+    
+    if (Height > 0) {
+      //u8g2.drawVLine(x,50-Height,50);
+      u8g2.drawVLine(x,60-Height,Height);
+    }
   }
 
+  //draw X axis notches:
+  for(byte x = 0; x < 128; x+=10)
+  {
+    //draw notches every 10 ticks to allow identifying the range of frequencies
+    u8g2.drawVLine(x,62,2);
+  }
+  
   if (DisplayMode == mode_spike) {
 
     //Average the peak values;
@@ -83,10 +107,9 @@ void draw(void)
 
     //Display the highest peak observed recently:
     u8g2.setFont(u8g2_font_ncenB08_tr);
-    u8g2.setCursor(80, 32);
+    u8g2.setCursor(100, 32);
     u8g2.print(HighestPeak);
   }
-  
 }
 
 void myISR()
@@ -164,8 +187,8 @@ void loop(void)
       EndChan = 255;
       break;
     case mode_spike:
-      StartChan = 112;
-      EndChan = 128;
+      StartChan = SpikeScanStart;   //SpikeDisplayStart;
+      EndChan = SpikeScanEnd;       //SpikeDisplayEnd;
       break;
   }
 
@@ -224,9 +247,11 @@ void loop(void)
         if(i >= 128) data[i - 128] = RSSI_max;
         break;
       case mode_spike:
-        if(i >= StartChan) {
+
+        //only store the displayed range for spike mode:
+        if(i >= SpikeDisplayStart && i <= SpikeDisplayEnd) {
             if (RSSI_max < 1) RSSI_max = 1;    //minimum value.. to put a floor and show how much bandwidth is actually sampled..
-            data[i - StartChan] = RSSI_max;
+            data[i - SpikeDisplayStart] = RSSI_max;
         }
         break;
     }
@@ -290,7 +315,13 @@ void displayModeScreen()
       case mode_spike:
         u8g2.drawStr(24, 10, "Spike");
         //u8g2.undoScale();
-        u8g2.drawStr(42, 44, "112..128");
+        
+        u8g2.setCursor(42, 44);
+        u8g2.print(SpikeDisplayStart);
+        u8g2.print("..");
+        u8g2.print(SpikeDisplayEnd);
+        
+        ///u8g2.drawStr(42, 44, "112..128");
         break;
     }
   } while( u8g2.nextPage() );
